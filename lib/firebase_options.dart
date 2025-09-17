@@ -41,45 +41,46 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'YOUR_WEB_API_KEY',
-    appId: 'YOUR_WEB_APP_ID',
-    messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
-    projectId: 'truthlens-app',
-    authDomain: 'truthlens-app.firebaseapp.com',
-    storageBucket: 'truthlens-app.appspot.com',
+    apiKey: 'AIzaSyDT5h1SqMl_U0E0S4pcd1Cawk0sAAuNMms',
+    appId: '1:225702147709:web:81c8aa5fcb47c06f8e6314',
+    messagingSenderId: '225702147709',
+    projectId: 'chicha-380b1',
+    authDomain: 'chicha-380b1.firebaseapp.com',
+    storageBucket: 'chicha-380b1.firebasestorage.app',
+    measurementId: 'G-RG77V0FY8S',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'YOUR_ANDROID_API_KEY',
-    appId: 'YOUR_ANDROID_APP_ID',
-    messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
-    projectId: 'truthlens-app',
-    storageBucket: 'truthlens-app.appspot.com',
+    apiKey: 'AIzaSyDT5h1SqMl_U0E0S4pcd1Cawk0sAAuNMms',
+    appId: '1:225702147709:android:YOUR_ANDROID_APP_ID',
+    messagingSenderId: '225702147709',
+    projectId: 'chicha-380b1',
+    storageBucket: 'chicha-380b1.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'YOUR_IOS_API_KEY',
-    appId: 'YOUR_IOS_APP_ID',
-    messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
-    projectId: 'truthlens-app',
-    storageBucket: 'truthlens-app.appspot.com',
+    apiKey: 'AIzaSyDT5h1SqMl_U0E0S4pcd1Cawk0sAAuNMms',
+    appId: '1:225702147709:ios:YOUR_IOS_APP_ID',
+    messagingSenderId: '225702147709',
+    projectId: 'chicha-380b1',
+    storageBucket: 'chicha-380b1.firebasestorage.app',
     iosBundleId: 'com.truthlens.app',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'YOUR_MACOS_API_KEY',
-    appId: 'YOUR_MACOS_APP_ID',
-    messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
-    projectId: 'truthlens-app',
-    storageBucket: 'truthlens-app.appspot.com',
+    apiKey: 'AIzaSyDT5h1SqMl_U0E0S4pcd1Cawk0sAAuNMms',
+    appId: '1:225702147709:ios:YOUR_MACOS_APP_ID',
+    messagingSenderId: '225702147709',
+    projectId: 'chicha-380b1',
+    storageBucket: 'chicha-380b1.firebasestorage.app',
     iosBundleId: 'com.truthlens.app',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'YOUR_WINDOWS_API_KEY',
-    appId: 'YOUR_WINDOWS_APP_ID',
-    messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
-    projectId: 'truthlens-app',
-    storageBucket: 'truthlens-app.appspot.com',
+    apiKey: 'AIzaSyDT5h1SqMl_U0E0S4pcd1Cawk0sAAuNMms',
+    appId: '1:225702147709:web:81c8aa5fcb47c06f8e6314',
+    messagingSenderId: '225702147709',
+    projectId: 'chicha-380b1',
+    storageBucket: 'chicha-380b1.firebasestorage.app',
   );
 }

@@ -1,10 +1,14 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+// import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  
+  // Google Sign-In temporarily disabled due to API compatibility issues
+  // final GoogleSignIn? _googleSignIn = kIsWeb ? null : GoogleSignIn(
+  //   scopes: ['email', 'profile'],
+  // );
 
   // Get current user
   User? get currentUser => _auth.currentUser;
@@ -20,8 +24,14 @@ class AuthService {
         password: password,
       );
       return credential.user;
-    } on FirebaseAuthException catch (e) {
-      throw _handleAuthException(e);
+    } catch (e) {
+      // Handle both FirebaseAuthException and web-specific exceptions
+      if (e is FirebaseAuthException) {
+        throw _handleAuthException(e);
+      } else {
+        // Handle web-specific errors
+        throw 'Authentication failed: ${e.toString()}';
+      }
     }
   }
 
@@ -33,10 +43,17 @@ class AuthService {
         password: password,
       );
       return credential.user;
-    } on FirebaseAuthException catch (e) {
-      throw _handleAuthException(e);
+    } catch (e) {
+      // Handle both FirebaseAuthException and web-specific exceptions
+      if (e is FirebaseAuthException) {
+        throw _handleAuthException(e);
+      } else {
+        // Handle web-specific errors
+        throw 'Registration failed: ${e.toString()}';
+      }
     }
   }
+
 
   // Sign in with Google
   Future<User?> signInWithGoogle() async {
@@ -44,24 +61,21 @@ class AuthService {
       if (kIsWeb) {
         // Web implementation
         GoogleAuthProvider googleProvider = GoogleAuthProvider();
-        final credential = await _auth.signInWithPopup(googleProvider);
+        googleProvider.addScope('email');
+        googleProvider.addScope('profile');
+        final UserCredential credential = await _auth.signInWithPopup(googleProvider);
         return credential.user;
       } else {
-        // Mobile implementation
-        final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-        if (googleUser == null) return null;
-
-        final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-        final credential = GoogleAuthProvider.credential(
-          accessToken: googleAuth.accessToken,
-          idToken: googleAuth.idToken,
-        );
-
-        final userCredential = await _auth.signInWithCredential(credential);
-        return userCredential.user;
+        // Mobile Google Sign-In implementation temporarily disabled
+        throw UnimplementedError('Google Sign-In is temporarily disabled.');
       }
-    } on FirebaseAuthException catch (e) {
-      throw _handleAuthException(e);
+    } catch (e) {
+      // Handle both FirebaseAuthException and web-specific exceptions
+      if (e is FirebaseAuthException) {
+        throw _handleAuthException(e);
+      } else {
+        throw 'Google Sign-In failed: ${e.toString()}';
+      }
     }
   }
 
@@ -69,17 +83,25 @@ class AuthService {
   Future<void> resetPassword(String email) async {
     try {
       await _auth.sendPasswordResetEmail(email: email);
-    } on FirebaseAuthException catch (e) {
-      throw _handleAuthException(e);
+    } catch (e) {
+      // Handle both FirebaseAuthException and web-specific exceptions
+      if (e is FirebaseAuthException) {
+        throw _handleAuthException(e);
+      } else {
+        throw 'Password reset failed: ${e.toString()}';
+      }
     }
   }
 
   // Sign out
   Future<void> signOut() async {
-    await Future.wait([
-      _auth.signOut(),
-      _googleSignIn.signOut(),
-    ]);
+    try {
+      await _auth.signOut();
+    } catch (e) {
+      debugPrint('Sign out error: $e');
+      // Continue with sign out even if there's an error
+      await _auth.signOut();
+    }
   }
 
   // Handle Firebase Auth exceptions

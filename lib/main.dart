@@ -29,17 +29,17 @@ void main() async {
     ]);
   }
 
-  // Initialize Firebase with options (skip for development if not configured)
-  if (!kIsWeb || AppConfig.enableAnalytics) {
-    try {
-      await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform,
-      );
-    } catch (e) {
-      // Firebase initialization is optional for development
-      debugPrint('Firebase initialization skipped or failed: $e');
-      debugPrint('Running without Firebase support');
-    }
+  // Initialize Firebase for all platforms
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    debugPrint('Firebase initialized successfully');
+  } catch (e) {
+    // Log Firebase initialization failure but continue
+    debugPrint('Firebase initialization failed: $e');
+    debugPrint('Running without Firebase support');
+    // Don't rethrow - allow app to continue without Firebase
   }
 
   // Initialize SharedPreferences

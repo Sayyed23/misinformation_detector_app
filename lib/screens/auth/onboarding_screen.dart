@@ -114,55 +114,59 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   final item = _items[index];
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // Illustration
-                        Container(
-                          width: double.infinity,
-                          height: 280,
-                          margin: const EdgeInsets.only(bottom: 48),
-                          decoration: BoxDecoration(
-                            color: item.color,
-                            borderRadius: BorderRadius.circular(24),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const SizedBox(height: 20),
+                          // Illustration
+                          Container(
+                            width: double.infinity,
+                            height: 240,
+                            margin: const EdgeInsets.only(bottom: 32),
+                            decoration: BoxDecoration(
+                              color: item.color,
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                            child: Icon(
+                              item.image,
+                              size: 100,
+                              color: const Color(0xFF2196F3),
+                            ),
                           ),
-                          child: Icon(
-                            item.image,
-                            size: 120,
-                            color: const Color(0xFF2196F3),
+                          
+                          // Content
+                          Text(
+                            item.title,
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1A1A1A),
+                            ),
+                            textAlign: TextAlign.center,
                           ),
-                        ),
-                        
-                        // Content
-                        Text(
-                          item.title,
-                          style: const TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF1A1A1A),
+                          const SizedBox(height: 8),
+                          Text(
+                            item.subtitle,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: Color(0xFF424242),
+                            ),
+                            textAlign: TextAlign.center,
                           ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          item.subtitle,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            color: Color(0xFF424242),
+                          const SizedBox(height: 12),
+                          Text(
+                            item.description,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Color(0xFF757575),
+                              height: 1.4,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          item.description,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF757575),
-                            height: 1.5,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
+                          const SizedBox(height: 20),
+                        ],
+                      ),
                     ),
                   );
                 },
