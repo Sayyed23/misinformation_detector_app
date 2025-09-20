@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_core/firebase_core.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:go_router/go_router.dart';
 
@@ -10,11 +10,12 @@ import 'package:go_router/go_router.dart';
 import 'config/app_config.dart';
 import 'core/constants/app_constants.dart';
 import 'core/theme/app_theme.dart';
-import 'firebase_options.dart';
 
 // Screen imports
 import 'screens/auth/onboarding_screen.dart';
 import 'screens/auth/login_screen.dart';
+import 'screens/auth/signup_screen.dart';
+import 'screens/auth/profile_setup_screen.dart';
 import 'screens/main_navigation_screen.dart';
 
 void main() async {
@@ -29,18 +30,11 @@ void main() async {
     ]);
   }
 
-  // Initialize Firebase for all platforms
-  try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-    debugPrint('Firebase initialized successfully');
-  } catch (e) {
-    // Log Firebase initialization failure but continue
-    debugPrint('Firebase initialization failed: $e');
-    debugPrint('Running without Firebase support');
-    // Don't rethrow - allow app to continue without Firebase
-  }
+  // Initialize Supabase
+  await Supabase.initialize(
+    url: 'https://fpxczbnluwmxsdpkyddl.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZweGN6Ym5sdXdteHNkcGt5ZGRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3MjkzNjQsImV4cCI6MjA3MjMwNTM2NH0.apU_DKxDUB5Ion8DI6nQNZUJ-uVu_emULzWdve-PPNg',
+  );
 
   // Initialize SharedPreferences
   final prefs = await SharedPreferences.getInstance();
@@ -111,10 +105,10 @@ class _TruthLensAppState extends State<TruthLensApp> {
   }
 
   GoRouter _createRouter() {
-    final bool isFirstLaunch =
-        widget.prefs.getBool(AppConstants.keyFirstLaunch) ?? true;
-    final String? authToken = widget.prefs.getString(AppConstants.keyAuthToken);
-    final bool isAuthenticated = authToken != null && authToken.isNotEmpty;
+    final bool isFirstLaunch = widget.prefs.getBool(AppConstants.keyFirstLaunch) ?? true;
+    final bool hasSupabaseSession = Supabase.instance.client.auth.currentUser != null;
+    final bool isLocalGuest = widget.prefs.getBool('is_local_guest') ?? false;
+    final bool isAuthenticated = hasSupabaseSession || isLocalGuest;
 
     return GoRouter(
       initialLocation: _getInitialRoute(isFirstLaunch, isAuthenticated),
@@ -137,6 +131,14 @@ class _TruthLensAppState extends State<TruthLensApp> {
         GoRoute(
           path: AppConstants.registerRoute,
           builder: (context, state) => const RegisterScreen(),
+        ),
+        GoRoute(
+          path: AppConstants.signupRoute,
+          builder: (context, state) => const SignupScreen(),
+        ),
+        GoRoute(
+          path: AppConstants.profileSetupRoute,
+          builder: (context, state) => const ProfileSetupScreen(),
         ),
         GoRoute(
           path: AppConstants.forgotPasswordRoute,
@@ -282,7 +284,7 @@ class RegisterScreen extends StatelessWidget {
 
   @override  
   Widget build(BuildContext context) {
-    // TODO: Implement proper register screen with Firebase auth
+  // TODO: Implement proper register screen with Supabase auth
     return Scaffold(
       appBar: AppBar(title: const Text('Register')),
       body: const Center(

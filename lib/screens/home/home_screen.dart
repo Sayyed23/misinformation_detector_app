@@ -1,6 +1,7 @@
+import '../detection_tool_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/constants/app_constants.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -11,12 +12,13 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final User? user = FirebaseAuth.instance.currentUser;
   
   @override
   Widget build(BuildContext context) {
-    final String userName = user?.displayName ?? 'User';
-    final String firstName = userName.split(' ').first;
+  // Use Supabase current user
+  final supabaseUser = Supabase.instance.client.auth.currentUser;
+  final String userName = supabaseUser?.userMetadata?['display_name'] ?? 'User';
+  final String firstName = userName.split(' ').first;
     
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
@@ -36,18 +38,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     CircleAvatar(
                       radius: 18,
                       backgroundColor: const Color(0xFFE3F2FD),
-                      backgroundImage: user?.photoURL != null
-                          ? NetworkImage(user!.photoURL!)
-                          : null,
-                      child: user?.photoURL == null
-                          ? Text(
-                              firstName[0].toUpperCase(),
-                              style: const TextStyle(
-                                color: Color(0xFF2196F3),
-                                fontWeight: FontWeight.bold,
-                              ),
-                            )
-                          : null,
+                      child: Text(
+                        firstName[0].toUpperCase(),
+                        style: const TextStyle(
+                          color: Color(0xFF2196F3),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                     const SizedBox(width: 10),
                     const Text(
@@ -124,7 +121,11 @@ class _HomeScreenState extends State<HomeScreen> {
                             'Verify content credibility',
                             const Color(0xFFFFF3E0),
                             Icons.fact_check_outlined,
-                            () => context.push(AppConstants.analysisRoute),
+                            () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => const DetectionToolScreen(),
+                              ),
+                            ),
                           ),
                         ),
                         const SizedBox(width: 12),

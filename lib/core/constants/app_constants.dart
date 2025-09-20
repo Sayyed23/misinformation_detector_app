@@ -8,6 +8,8 @@ class AppConstants {
   static const String onboardingRoute = '/onboarding';
   static const String loginRoute = '/login';
   static const String registerRoute = '/register';
+  static const String signupRoute = '/signup';
+  static const String profileSetupRoute = '/profile-setup';
   static const String forgotPasswordRoute = '/forgot-password';
   static const String homeRoute = '/home';
   static const String analysisRoute = '/analysis';
