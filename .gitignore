@@ -1,6 +1,22 @@
 # Miscellaneous
 *.class
 *.log
+
+# Environment files - SECURITY: Never commit these!
+.env
+.env.local
+.env.*.local
+*.env
+backend/.env
+backend/.env.backup
+
+# API Keys and Secrets
+*.key
+*.pem
+*.p12
+serviceAccountKey.json
+google-services.json
+GoogleService-Info.plist
 *.pyc
 *.swp
 .DS_Store
