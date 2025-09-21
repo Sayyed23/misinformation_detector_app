@@ -1,19 +1,19 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:dio/dio.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:dio/dio.dart' as dio;
+import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
 import 'package:image_picker/image_picker.dart';
 import 'config_service.dart';
 
 class ApiService {
   late final String _baseUrl;
-  late final Dio _dio;
-  final SupabaseClient _supabase = Supabase.instance.client;
+  late final dio.Dio _dio;
+  final supabase.SupabaseClient _supabase = supabase.Supabase.instance.client;
   final ConfigService _config = ConfigService.instance;
 
   ApiService() {
     _baseUrl = _config.backendApiUrl;
-    _dio = Dio(BaseOptions(
+  _dio = dio.Dio(dio.BaseOptions(
       baseUrl: _baseUrl,
       connectTimeout: const Duration(seconds: 30),
       receiveTimeout: const Duration(seconds: 60),
@@ -25,7 +25,7 @@ class ApiService {
     ));
 
     // Add request interceptor to include auth token
-    _dio.interceptors.add(InterceptorsWrapper(
+  _dio.interceptors.add(dio.InterceptorsWrapper(
       onRequest: (options, handler) async {
         final user = _supabase.auth.currentUser;
         if (user != null) {
@@ -53,20 +53,31 @@ class ApiService {
     String priority = 'normal',
   }) async {
     try {
-      String? imageUrl;
+  final formData = dio.FormData();
 
-      // Upload image if provided
+      if (text != null) formData.fields.add(MapEntry('text', text));
+      if (sourceUrl != null) formData.fields.add(MapEntry('source_url', sourceUrl));
+      formData.fields.add(MapEntry('language', language));
+      formData.fields.add(MapEntry('priority', priority));
+
       if (image != null) {
-        imageUrl = await _uploadImage(image);
+        if (kIsWeb) {
+          final bytes = await image.readAsBytes();
+          formData.files.add(
+            MapEntry(
+              'image',
+              dio.MultipartFile.fromBytes(bytes, filename: image.name),
+            ),
+          );
+        } else {
+          formData.files.add(
+            MapEntry(
+              'image',
+              await dio.MultipartFile.fromFile(image.path, filename: image.name),
+            ),
+          );
+        }
       }
-
-      final formData = FormData.fromMap({
-        if (text != null) 'text': text,
-        if (sourceUrl != null) 'source_url': sourceUrl,
-        'language': language,
-        'priority': priority,
-        if (imageUrl != null) 'image_url': imageUrl,
-      });
 
       final response = await _dio.post(
         _config.analyzeTextEndpoint,
@@ -74,7 +85,7 @@ class ApiService {
       );
 
       return response.data;
-    } on DioException catch (e) {
+    } on dio.DioException catch (e) {
       throw _handleDioException(e);
     } catch (e) {
       throw Exception('Failed to submit claim: $e');
@@ -86,7 +97,7 @@ class ApiService {
     try {
       final response = await _dio.get('${_config.getResultEndpoint}/$claimId');
       return response.data;
-    } on DioException catch (e) {
+    } on dio.DioException catch (e) {
       throw _handleDioException(e);
     } catch (e) {
       throw Exception('Failed to get verification result: $e');
@@ -109,7 +120,7 @@ class ApiService {
         },
       );
       return response.data;
-    } on DioException catch (e) {
+    } on dio.DioException catch (e) {
       throw _handleDioException(e);
     } catch (e) {
       throw Exception('Failed to get user history: $e');
@@ -140,7 +151,7 @@ class ApiService {
         },
       );
       return List<Map<String, dynamic>>.from(response.data);
-    } on DioException catch (e) {
+    } on dio.DioException catch (e) {
       throw _handleDioException(e);
     } catch (e) {
       throw Exception('Failed to get education content: $e');
@@ -161,7 +172,7 @@ class ApiService {
         },
       );
       return List<Map<String, dynamic>>.from(response.data);
-    } on DioException catch (e) {
+    } on dio.DioException catch (e) {
       throw _handleDioException(e);
     } catch (e) {
       throw Exception('Failed to get learning modules: $e');
@@ -182,7 +193,7 @@ class ApiService {
         },
       );
       return response.data;
-    } on DioException catch (e) {
+    } on dio.DioException catch (e) {
       throw _handleDioException(e);
     } catch (e) {
       throw Exception('Failed to get trending topics: $e');
@@ -201,7 +212,7 @@ class ApiService {
         },
       );
       return response.data;
-    } on DioException catch (e) {
+    } on dio.DioException catch (e) {
       throw _handleDioException(e);
     } catch (e) {
       throw Exception('Failed to get fact-check sources: $e');
@@ -226,7 +237,7 @@ class ApiService {
         },
       );
       return response.data;
-    } on DioException catch (e) {
+    } on dio.DioException catch (e) {
       throw _handleDioException(e);
     } catch (e) {
       throw Exception('Failed to track learning progress: $e');
@@ -238,7 +249,7 @@ class ApiService {
     try {
       final response = await _dio.get('/api/users/profile');
       return response.data;
-    } on DioException catch (e) {
+    } on dio.DioException catch (e) {
       throw _handleDioException(e);
     } catch (e) {
       throw Exception('Failed to get user profile: $e');
@@ -263,7 +274,7 @@ class ApiService {
         },
       );
       return response.data;
-    } on DioException catch (e) {
+    } on dio.DioException catch (e) {
       throw _handleDioException(e);
     } catch (e) {
       throw Exception('Failed to update user profile: $e');
@@ -275,7 +286,7 @@ class ApiService {
     try {
       final response = await _dio.get('/api/users/stats');
       return response.data;
-    } on DioException catch (e) {
+    } on dio.DioException catch (e) {
       throw _handleDioException(e);
     } catch (e) {
       throw Exception('Failed to get user stats: $e');
@@ -287,7 +298,7 @@ class ApiService {
     try {
       final response = await _dio.get('/api/users/badges');
       return response.data;
-    } on DioException catch (e) {
+    } on dio.DioException catch (e) {
       throw _handleDioException(e);
     } catch (e) {
       throw Exception('Failed to get user badges: $e');
@@ -310,7 +321,7 @@ class ApiService {
         },
       );
       return response.data;
-    } on DioException catch (e) {
+    } on dio.DioException catch (e) {
       throw _handleDioException(e);
     } catch (e) {
       throw Exception('Failed to report claim: $e');
@@ -333,7 +344,7 @@ class ApiService {
         },
       );
       return response.data;
-    } on DioException catch (e) {
+    } on dio.DioException catch (e) {
       throw _handleDioException(e);
     } catch (e) {
       throw Exception('Failed to get trending analysis: $e');
@@ -356,7 +367,7 @@ class ApiService {
         },
       );
       return response.data;
-    } on DioException catch (e) {
+    } on dio.DioException catch (e) {
       throw _handleDioException(e);
     } catch (e) {
       throw Exception('Failed to get misinformation insights: $e');
@@ -364,38 +375,18 @@ class ApiService {
   }
 
   // Upload image to Supabase Storage
-  Future<String> _uploadImage(XFile image) async {
-    try {
-      final user = _supabase.auth.currentUser;
-      if (user == null) throw Exception('User not authenticated');
 
-      final fileName = '${DateTime.now().millisecondsSinceEpoch}_${image.name}';
-      final filePath = 'claims/${user.id}/$fileName';
-
-      final fileBytes = await File(image.path).readAsBytes();
-      await _supabase.storage
-          .from(_config.supabaseStorageBucket)
-          .uploadBinary(filePath, fileBytes);
-
-      final publicUrl = _supabase.storage
-          .from(_config.supabaseStorageBucket)
-          .getPublicUrl(filePath);
-      return publicUrl;
-    } catch (e) {
-      throw Exception('Failed to upload image: $e');
-    }
-  }
 
   // Handle Dio exceptions
-  Exception _handleDioException(DioException e) {
+  Exception _handleDioException(dio.DioException e) {
     switch (e.type) {
-      case DioExceptionType.connectionTimeout:
-      case DioExceptionType.sendTimeout:
-      case DioExceptionType.receiveTimeout:
+  case dio.DioExceptionType.connectionTimeout:
+  case dio.DioExceptionType.sendTimeout:
+  case dio.DioExceptionType.receiveTimeout:
         return Exception(
             'Connection timeout. Please check your internet connection.');
 
-      case DioExceptionType.badResponse:
+  case dio.DioExceptionType.badResponse:
         final statusCode = e.response?.statusCode;
         final message = e.response?.data['detail'] ?? e.response?.statusMessage;
 
@@ -416,10 +407,10 @@ class ApiService {
             return Exception('Request failed: $message');
         }
 
-      case DioExceptionType.cancel:
+  case dio.DioExceptionType.cancel:
         return Exception('Request was cancelled');
 
-      case DioExceptionType.unknown:
+  case dio.DioExceptionType.unknown:
         if (e.error is SocketException) {
           return Exception('No internet connection');
         }
@@ -443,7 +434,7 @@ class ApiService {
         },
       );
       return response.data;
-    } on DioException catch (e) {
+    } on dio.DioException catch (e) {
       throw _handleDioException(e);
     } catch (e) {
       throw Exception('Failed to get quiz: $e');
@@ -464,7 +455,7 @@ class ApiService {
         },
       );
       return response.data;
-    } on DioException catch (e) {
+    } on dio.DioException catch (e) {
       throw _handleDioException(e);
     } catch (e) {
       throw Exception('Failed to submit quiz: $e');

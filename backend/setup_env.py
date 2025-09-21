@@ -20,6 +20,17 @@ def print_header():
     print()
 
 
+def check_firebase_service_account():
+    key_path = os.getenv('FIREBASE_SERVICE_ACCOUNT', 'backend/serviceAccountKey.json')
+    if not os.path.exists(key_path):
+        print(f"[ERROR] Service account key not found: {key_path}")
+        print("Please download your Firebase serviceAccountKey.json from the Firebase Console and place it at the above path.")
+        return False
+    else:
+        print(f"[OK] Service account key found: {key_path}")
+        return True
+
+
 def check_env_file() -> bool:
     """Check if .env file exists"""
     return Path(".env").exists()
@@ -160,22 +171,8 @@ def setup_gitignore():
 
 def main():
     """Main setup function"""
+
     print_header()
-    
-    # Check Python version
-    if sys.version_info < (3, 7):
-        print("❌ Python 3.7+ is required")
-        sys.exit(1)
-    
-    # Check if we're in the backend directory
-    if not Path("requirements.txt").exists():
-        print("❌ Please run this script from the backend directory")
-        sys.exit(1)
-    
-    # Backup existing .env if it exists
-    backup_env_file()
-    
-    # Read example environment variables
     env_vars = read_env_example()
     
     if not env_vars:
@@ -249,6 +246,7 @@ def main():
     
     # Write the .env file
     write_env_file(env_vars)
+    check_firebase_service_account()
     
     # Setup .gitignore
     setup_gitignore()

@@ -12,11 +12,11 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import firebase_admin
 from firebase_admin import credentials, auth
-from google.cloud import firestore, storage, secretmanager
+from google.cloud import firestore, storage
 import structlog
 
 # Import routers
-from routers import claims, education, users, analytics
+from backend.routers import claims, education, users, analytics
 
 # Initialize structured logging
 structlog.configure(
@@ -41,13 +41,12 @@ logger = structlog.get_logger()
 # Global variables for Google Cloud clients
 firestore_client = None
 storage_client = None
-secret_client = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Initialize and cleanup resources"""
-    global firestore_client, storage_client, secret_client
+    global firestore_client, storage_client
     
     try:
         # Initialize Firebase Admin SDK
@@ -67,7 +66,6 @@ async def lifespan(app: FastAPI):
         # Initialize Google Cloud clients
         firestore_client = firestore.Client()
         storage_client = storage.Client()
-        secret_client = secretmanager.SecretManagerServiceClient()
         
         logger.info("Application startup complete")
         yield

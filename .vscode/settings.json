@@ -1,3 +1,4 @@
 {
-    "cmake.sourceDirectory": "D:/misinformation_detector_app/windows/flutter"
+    "cmake.sourceDirectory": "D:/misinformation_detector_app/windows/flutter",
+    "python-envs.pythonProjects": []
 }

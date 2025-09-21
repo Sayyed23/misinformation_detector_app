@@ -31,6 +31,9 @@ class OCRService:
         
         # Document AI processor ID (would be configured per use case)
         self.processor_id = os.getenv("DOCUMENT_AI_PROCESSOR_ID")
+        # Gemini OCR API config
+        self.gemini_api_key = os.getenv("GEMINI_OCR_API_KEY")
+        self.gemini_api_url = os.getenv("GEMINI_OCR_API_URL", "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:analyzeImage")
         
     async def extract_text_from_image(self, image_url: str) -> Dict:
         """
