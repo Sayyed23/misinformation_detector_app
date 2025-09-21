@@ -1,4 +1,4 @@
-name: misinformation_detector
+name: truthlens
 description: "AI-Powered Misinformation Detection & Education App"
 publish_to: 'none'
 
@@ -16,6 +16,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   google_fonts: ^6.1.0
   flutter_svg: ^2.0.9
+  font_awesome_flutter: ^10.7.0
   
   # State Management
   provider: ^6.1.1
@@ -27,6 +28,7 @@ dependencies:
   dio: ^5.4.0
   connectivity_plus: ^7.0.0
   flutter_dotenv: ^5.1.0
+  http: ^1.2.1
   
   # Local Storage
   shared_preferences: ^2.2.2
@@ -37,6 +39,7 @@ dependencies:
   image_picker: ^1.0.5
   cached_network_image: ^3.3.1
   photo_view: ^0.15.0
+  video_thumbnail: ^0.5.3
   
   # OCR & AI
   google_mlkit_text_recognition: ^0.10.0
@@ -50,7 +53,7 @@ dependencies:
   # Authentication
   firebase_core: ^4.1.0
   firebase_auth: ^6.0.2
-  google_sign_in: ^7.1.1
+  #google_sign_in: ^7.1.1 # Removed Google Sign-In dependency
   
   # Analytics & Crash Reporting
   firebase_analytics: ^12.0.1

@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../services/api_service.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart'; // Import Font Awesome Icons
 import '../../services/config_service.dart';
 import '../../services/ocr_service.dart';
 import '../../services/gemini_service.dart';
@@ -17,36 +17,99 @@ class AnalysisScreen extends StatefulWidget {
 class _AnalysisScreenState extends State<AnalysisScreen> {
   final TextEditingController _textController = TextEditingController();
   final TextEditingController _linkController = TextEditingController();
-  final ApiService _apiService = ApiService();
   final ConfigService _config = ConfigService.instance;
   final OCRService _ocrService = OCRService();
   final GeminiService _geminiService = GeminiService();
   bool _isAnalyzing = false;
   Map<String, dynamic>? _analysisResult;
   XFile? _uploadedImage;
+  XFile? _uploadedVideo;
   String _extractedText = '';
   bool _isExtractingText = false;
+  String _translatedExplanation = '';
+  bool _isTranslated = false;
+  Map<String, dynamic>?
+      _translatedAnalysisResult; // New state variable for full translated analysis
+  String _selectedLanguage = 'en'; // Default to English
+  final List<Map<String, String>> _translationLanguages = const [
+    {'code': 'en', 'name': 'English'},
+    {'code': 'hi', 'name': 'Hindi'},
+    {'code': 'bn', 'name': 'Bengali'},
+    {'code': 'te', 'name': 'Telugu'},
+    {'code': 'mr', 'name': 'Marathi'},
+    {'code': 'ta', 'name': 'Tamil'},
+    {'code': 'ur', 'name': 'Urdu'},
+    {'code': 'gu', 'name': 'Gujarati'},
+    {'code': 'kn', 'name': 'Kannada'},
+    {'code': 'ml', 'name': 'Malayalam'},
+    {'code': 'or', 'name': 'Odia (Oriya)'},
+    {'code': 'pa', 'name': 'Punjabi'},
+    {'code': 'as', 'name': 'Assamese'},
+    {'code': 'ks', 'name': 'Kashmiri'},
+    {'code': 'ne', 'name': 'Nepali'},
+    {'code': 'sd', 'name': 'Sindhi'},
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _textController.addListener(_onInputChanged);
+    _linkController.addListener(_onInputChanged);
+  }
 
   @override
   void dispose() {
+    _textController.removeListener(_onInputChanged);
+    _linkController.removeListener(_onInputChanged);
     _textController.dispose();
     _linkController.dispose();
     super.dispose();
   }
 
-  Future<void> _pickImage() async {
+  void _onInputChanged() {
+    setState(() {
+      // This empty setState rebuilds the widget and re-evaluates the button's onPressed property
+    });
+  }
+
+  Future<void> _pickMedia() async {
     if (!_config.enableImageAnalysis) {
+      // Assuming video analysis also falls under this config
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Image analysis is currently disabled')),
+        const SnackBar(content: Text('Media analysis is currently disabled')),
       );
       return;
     }
 
-    // Show source selection dialog
-    final ImageSource? source = await showDialog<ImageSource>(
+    // Show source selection dialog for image or video
+    final MediaType? mediaType = await showDialog<MediaType>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Select Image Source'),
+        title: const Text('Select Media Type'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.image),
+              title: const Text('Image'),
+              onTap: () => Navigator.pop(context, MediaType.image),
+            ),
+            ListTile(
+              leading: const Icon(Icons.video_library),
+              title: const Text('Video'),
+              onTap: () => Navigator.pop(context, MediaType.video),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (mediaType == null) return;
+
+    ImageSource? source = await showDialog<ImageSource>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Select Media Source'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -68,20 +131,31 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     if (source == null) return;
 
     final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: source);
+    XFile? pickedFile;
 
-    if (image != null && mounted) {
+    if (mediaType == MediaType.image) {
+      pickedFile = await picker.pickImage(source: source);
+    } else if (mediaType == MediaType.video) {
+      pickedFile = await picker.pickVideo(source: source);
+    }
+
+    if (pickedFile != null && mounted) {
       setState(() {
-        _uploadedImage = image;
+        _uploadedImage = mediaType == MediaType.image ? pickedFile : null;
+        _uploadedVideo = mediaType == MediaType.video ? pickedFile : null;
         _extractedText = '';
         _analysisResult = null;
       });
 
-      // Automatically extract text from the image
-      await _extractTextFromImage();
+      if (mediaType == MediaType.image) {
+        // Automatically extract text from the image
+        await _extractTextFromImage();
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Image selected: ${image.name}')),
+        SnackBar(
+            content: Text(
+                '${mediaType == MediaType.image ? 'Image' : 'Video'} selected: ${pickedFile.name}')),
       );
     }
   }
@@ -137,11 +211,12 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   Future<void> _analyzeContent() async {
     if (_textController.text.isEmpty &&
         _linkController.text.isEmpty &&
-        _uploadedImage == null) {
+        _uploadedImage == null &&
+        _uploadedVideo == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
             content: Text(
-                'Please enter text, a link, or upload an image to analyze')),
+                'Please enter text, a link, or upload an image or video to analyze')),
       );
       return;
     }
@@ -157,22 +232,18 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       if (_uploadedImage != null) {
         // Analyze image with OCR + Gemini
         result = await _analyzeImageWithGemini();
+      } else if (_uploadedVideo != null) {
+        // Analyze video with Gemini
+        result =
+            await _geminiService.analyzeVideoForMisinformation(_uploadedVideo!);
       } else if (_textController.text.isNotEmpty) {
         // Analyze text with Gemini
         result = await _geminiService
             .analyzeTextForMisinformation(_textController.text);
       } else if (_linkController.text.isNotEmpty) {
-        // For URL analysis, we'll use the existing API service
-        result = await _apiService.submitClaim(
-          sourceUrl: _linkController.text,
-          language: 'en',
-          priority: 'normal',
-        );
-
-        if (result.containsKey('claim_id')) {
-          await _pollForResults(result['claim_id']);
-          return;
-        }
+        // Analyze URL with Gemini
+        result = await _geminiService
+            .analyzeUrlForMisinformation(_linkController.text);
       } else {
         throw Exception('No content to analyze');
       }
@@ -301,6 +372,60 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Language selection dropdown (moved here)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        const Text(
+                          'Translate to:',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF475569),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        DropdownButton<String>(
+                          value: _selectedLanguage,
+                          icon: const Icon(Icons.arrow_downward,
+                              color: Color(0xFF0284C7)),
+                          iconSize: 20,
+                          elevation: 16,
+                          style: const TextStyle(
+                              color: Color(0xFF0284C7),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600),
+                          underline: Container(
+                            height: 2,
+                            color: const Color(0xFF0284C7),
+                          ),
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              _selectedLanguage = newValue!;
+                              // Trigger full translation if a new language is selected and there's an analysis result
+                              if (_analysisResult != null &&
+                                  _selectedLanguage != 'en') {
+                                _translateFullAnalysis();
+                              } else if (_selectedLanguage == 'en') {
+                                _isTranslated = false;
+                                _analysisResult =
+                                    null; // Clear translated result when switching to English
+                              }
+                            });
+                          },
+                          items: _translationLanguages
+                              .map<DropdownMenuItem<String>>(
+                                  (Map<String, String> lang) {
+                            return DropdownMenuItem<String>(
+                              value: lang['code'],
+                              child: Text(lang['name']!),
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
                     // Info Card
                     Container(
                       width: double.infinity,
@@ -380,7 +505,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: TextButton.icon(
-                                onPressed: _pickImage,
+                                onPressed: _pickMedia,
                                 icon: const Icon(
                                   Icons.upload_file,
                                   color: Color(0xFF334155),
@@ -396,7 +521,8 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                                 ),
                               ),
                             ),
-                            if (_uploadedImage != null) ...[
+                            if (_uploadedImage != null ||
+                                _uploadedVideo != null) ...[
                               const SizedBox(height: 12),
                               Card(
                                 elevation: 2,
@@ -412,29 +538,41 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                                           SizedBox(
                                             width: 64,
                                             height: 64,
-                                            child: FutureBuilder<Uint8List>(
-                                              future:
-                                                  _uploadedImage!.readAsBytes(),
-                                              builder: (context, snapshot) {
-                                                if (snapshot.connectionState ==
-                                                        ConnectionState.done &&
-                                                    snapshot.hasData) {
-                                                  return Image.memory(
-                                                    snapshot.data!,
-                                                    fit: BoxFit.cover,
-                                                  );
-                                                } else {
-                                                  return const Center(
-                                                      child:
-                                                          CircularProgressIndicator());
-                                                }
-                                              },
-                                            ),
+                                            child: (_uploadedImage != null)
+                                                ? FutureBuilder<Uint8List>(
+                                                    future: _uploadedImage!
+                                                        .readAsBytes(),
+                                                    builder:
+                                                        (context, snapshot) {
+                                                      if (snapshot.connectionState ==
+                                                              ConnectionState
+                                                                  .done &&
+                                                          snapshot.hasData) {
+                                                        return Image.memory(
+                                                          snapshot.data!,
+                                                          fit: BoxFit.cover,
+                                                        );
+                                                      } else {
+                                                        return const Center(
+                                                            child:
+                                                                CircularProgressIndicator());
+                                                      }
+                                                    },
+                                                  )
+                                                : (_uploadedVideo != null)
+                                                    ? const Icon(
+                                                        Icons.video_file,
+                                                        size: 64,
+                                                        color: Color(
+                                                            0xFF334155)) // Placeholder for video thumbnail
+                                                    : const SizedBox.shrink(),
                                           ),
                                           const SizedBox(width: 12),
                                           Expanded(
                                             child: Text(
-                                              _uploadedImage!.name,
+                                              (_uploadedImage?.name ??
+                                                      _uploadedVideo?.name) ??
+                                                  '',
                                               style: const TextStyle(
                                                 fontWeight: FontWeight.w500,
                                                 color: Color(0xFF334155),
@@ -447,6 +585,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                                             onPressed: () {
                                               setState(() {
                                                 _uploadedImage = null;
+                                                _uploadedVideo = null;
                                                 _extractedText = '';
                                                 _analysisResult = null;
                                               });
@@ -529,7 +668,8 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                           decoration: BoxDecoration(
                             color: (_textController.text.isNotEmpty ||
                                     _linkController.text.isNotEmpty ||
-                                    _uploadedImage != null)
+                                    _uploadedImage != null ||
+                                    _uploadedVideo != null)
                                 ? const Color(0xFF0284C7)
                                 : const Color(0xFF94A3B8),
                             borderRadius: BorderRadius.circular(8),
@@ -538,7 +678,8 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                             onPressed: (_isAnalyzing ||
                                     (_textController.text.isEmpty &&
                                         _linkController.text.isEmpty &&
-                                        _uploadedImage == null))
+                                        _uploadedImage == null &&
+                                        _uploadedVideo == null))
                                 ? null
                                 : _analyzeContent,
                             child: _isAnalyzing
@@ -576,19 +717,49 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                           gradient: LinearGradient(
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
-                            colors: _analysisResult!['isMisinformation'] == true
+                            colors: (_isTranslated &&
+                                        _translatedAnalysisResult != null &&
+                                        _translatedAnalysisResult!['isMisinformation'] ==
+                                            true) ||
+                                    (!_isTranslated &&
+                                        _analysisResult != null &&
+                                        _analysisResult!['isMisinformation'] ==
+                                            true)
                                 ? [
                                     const Color(
                                         0xFFDC2626), // Red for misinformation
                                     const Color(0xFFB91C1C), // Darker red
                                   ]
-                                : _analysisResult!['credibilityScore'] >= 80
+                                : (_isTranslated &&
+                                            _translatedAnalysisResult!['credibilityScore'] !=
+                                                null &&
+                                            (_translatedAnalysisResult!['credibilityScore']
+                                                    as num) >=
+                                                80) ||
+                                        (!_isTranslated &&
+                                            _analysisResult!['credibilityScore'] !=
+                                                null &&
+                                            (_analysisResult!['credibilityScore']
+                                                    as num) >=
+                                                80)
                                     ? [
                                         const Color(
                                             0xFF10B981), // Green for high credibility
                                         const Color(0xFF059669), // Darker green
                                       ]
-                                    : _analysisResult!['credibilityScore'] >= 60
+                                    : (_isTranslated &&
+                                                _translatedAnalysisResult![
+                                                        'credibilityScore'] !=
+                                                    null &&
+                                                (_translatedAnalysisResult!['credibilityScore']
+                                                        as num) >=
+                                                    60) ||
+                                            (!_isTranslated &&
+                                                _analysisResult!['credibilityScore'] !=
+                                                    null &&
+                                                (_analysisResult!['credibilityScore']
+                                                        as num) >=
+                                                    60)
                                         ? [
                                             const Color(
                                                 0xFFF59E0B), // Orange for medium credibility
@@ -620,17 +791,27 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                             mainAxisAlignment: MainAxisAlignment.end,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                'Credibility Score: ${_analysisResult!['credibilityScore'] ?? 'N/A'}%',
-                                style: const TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
+                              Expanded(
+                                child: Text(
+                                  'Credibility Score: ${(_isTranslated && _translatedAnalysisResult!['credibilityScore'] != null ? _translatedAnalysisResult!['credibilityScore'] : _analysisResult!['credibilityScore']) ?? 'N/A'}%',
+                                  style: const TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                  softWrap: true,
                                 ),
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                _analysisResult!['credibilityLevel'] ??
+                                (_isTranslated &&
+                                            _translatedAnalysisResult![
+                                                    'credibilityLevel'] !=
+                                                null
+                                        ? _translatedAnalysisResult![
+                                            'credibilityLevel']
+                                        : _analysisResult![
+                                            'credibilityLevel']) ??
                                     'Unknown',
                                 style: const TextStyle(
                                   fontSize: 16,
@@ -638,8 +819,13 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                                   color: Color(0xFF86EFAC),
                                 ),
                               ),
-                              if (_analysisResult!['isMisinformation'] ==
-                                  true) ...[
+                              if ((_isTranslated &&
+                                      _translatedAnalysisResult![
+                                              'isMisinformation'] ==
+                                          true) ||
+                                  (!_isTranslated &&
+                                      _analysisResult!['isMisinformation'] ==
+                                          true)) ...[
                                 const SizedBox(height: 8),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
@@ -665,21 +851,107 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                         ),
                       ),
 
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 32),
 
                       // Explanation
-                      const Text(
-                        'Explanation',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF0F172A),
-                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Explanation',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF0F172A),
+                            ),
+                          ),
+                          // Only show button if explanation exists
+                          if ((_isTranslated &&
+                                  _translatedAnalysisResult!['explanation'] !=
+                                      null &&
+                                  (_translatedAnalysisResult!['explanation']
+                                          as String)
+                                      .isNotEmpty) ||
+                              (!_isTranslated &&
+                                  _analysisResult!['explanation'] != null &&
+                                  (_analysisResult!['explanation'] as String)
+                                      .isNotEmpty))
+                            TextButton.icon(
+                              onPressed: _translateExplanation,
+                              icon: Icon(
+                                Icons.translate,
+                                size: 20,
+                                color: Color(0xFF0284C7),
+                              ),
+                              label: Text(
+                                _isTranslated ? 'Show Original' : 'Translate',
+                                style: TextStyle(
+                                  color: Color(0xFF0284C7),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      // Language selection dropdown
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          const Text(
+                            'Translate to:',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF475569),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          DropdownButton<String>(
+                            value: _selectedLanguage,
+                            icon: const Icon(Icons.arrow_downward,
+                                color: Color(0xFF0284C7)),
+                            iconSize: 20,
+                            elevation: 16,
+                            style: const TextStyle(
+                                color: Color(0xFF0284C7),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600),
+                            underline: Container(
+                              height: 2,
+                              color: const Color(0xFF0284C7),
+                            ),
+                            onChanged: (String? newValue) {
+                              setState(() {
+                                _selectedLanguage = newValue!;
+                                // Trigger full translation if a new language is selected and there's an analysis result
+                                if (_analysisResult != null &&
+                                    _selectedLanguage != 'en') {
+                                  _translateFullAnalysis();
+                                } else if (_selectedLanguage == 'en') {
+                                  _isTranslated = false;
+                                  _translatedAnalysisResult =
+                                      null; // Clear translated result when switching to English
+                                }
+                              });
+                            },
+                            items: _translationLanguages
+                                .map<DropdownMenuItem<String>>(
+                                    (Map<String, String> lang) {
+                              return DropdownMenuItem<String>(
+                                value: lang['code'],
+                                child: Text(lang['name']!),
+                              );
+                            }).toList(),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        _analysisResult!['explanation'] ??
-                            'No explanation available.',
+                        _isTranslated && _translatedExplanation.isNotEmpty
+                            ? _translatedExplanation
+                            : _analysisResult!['explanation'] ??
+                                'No explanation available.',
                         style: const TextStyle(
                           color: Color(0xFF475569),
                           height: 1.5,
@@ -689,8 +961,9 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                       const SizedBox(height: 24),
 
                       // Evidence Section
-                      if (_analysisResult!['evidence'] != null &&
-                          (_analysisResult!['evidence'] as List)
+                      if (_currentAnalysisResult != null &&
+                          _currentAnalysisResult!['evidence'] != null &&
+                          (_currentAnalysisResult!['evidence'] as List)
                               .isNotEmpty) ...[
                         const Text(
                           'Evidence Analysis',
@@ -701,7 +974,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        ...(_analysisResult!['evidence'] as List).map(
+                        ...(_currentAnalysisResult!['evidence'] as List).map(
                           (evidence) => Container(
                             margin: const EdgeInsets.only(bottom: 8),
                             padding: const EdgeInsets.all(12),
@@ -767,8 +1040,9 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                       ],
 
                       // Red Flags Section
-                      if (_analysisResult!['redFlags'] != null &&
-                          (_analysisResult!['redFlags'] as List)
+                      if (_currentAnalysisResult != null &&
+                          _currentAnalysisResult!['redFlags'] != null &&
+                          (_currentAnalysisResult!['redFlags'] as List)
                               .isNotEmpty) ...[
                         const Text(
                           'Red Flags',
@@ -779,7 +1053,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        ...(_analysisResult!['redFlags'] as List).map(
+                        ...(_currentAnalysisResult!['redFlags'] as List).map(
                           (flag) => Container(
                             margin: const EdgeInsets.only(bottom: 8),
                             padding: const EdgeInsets.all(12),
@@ -814,8 +1088,9 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                       ],
 
                       // Recommendations Section
-                      if (_analysisResult!['recommendations'] != null &&
-                          (_analysisResult!['recommendations'] as List)
+                      if (_currentAnalysisResult != null &&
+                          _currentAnalysisResult!['recommendations'] != null &&
+                          (_currentAnalysisResult!['recommendations'] as List)
                               .isNotEmpty) ...[
                         const Text(
                           'Recommendations',
@@ -826,7 +1101,8 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        ...(_analysisResult!['recommendations'] as List).map(
+                        ...(_currentAnalysisResult!['recommendations'] as List)
+                            .map(
                           (recommendation) => Container(
                             margin: const EdgeInsets.only(bottom: 8),
                             padding: const EdgeInsets.all(12),
@@ -861,146 +1137,164 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                       ],
 
                       // Source Evidence
-                      const Text(
-                        'Source Evidence',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF0F172A),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      ...(_analysisResult!['sources'] as List).map(
-                        (source) => Container(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(8),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Color(0x0A000000),
-                                blurRadius: 4,
-                                offset: Offset(0, 1),
-                              ),
-                            ],
+                      if (_currentAnalysisResult != null &&
+                          _currentAnalysisResult!['sources'] != null &&
+                          (_currentAnalysisResult!['sources'] as List)
+                              .isNotEmpty) ...[
+                        const Text(
+                          'Source Evidence',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF0F172A),
                           ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 40,
-                                height: 40,
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFFE0F2FE),
-                                  shape: BoxShape.circle,
+                        ),
+                        const SizedBox(height: 8),
+                        ...(_currentAnalysisResult!['sources'] as List).map(
+                          (source) => Container(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Color(0x0A000000),
+                                  blurRadius: 4,
+                                  offset: Offset(0, 1),
                                 ),
-                                child: Icon(
-                                  _getSourceIcon(source['type'] ?? ''),
-                                  color: const Color(0xFF0284C7),
-                                  size: 20,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Text(
-                                  source['title'] ?? 'N/A',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w500,
-                                    color: Color(0xFF334155),
-                                    fontSize: 14,
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFFE0F2FE),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    _getSourceIcon(source['type'] ?? ''),
+                                    color: const Color(0xFF0284C7),
+                                    size: 20,
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      // Further Reading
-                      const Text(
-                        'Further Reading',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF0F172A),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      ...(_analysisResult!['furtherReading'] as List).map(
-                        (item) => Container(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(8),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Color(0x0A000000),
-                                blurRadius: 4,
-                                offset: Offset(0, 1),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 40,
-                                height: 40,
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFFE0F2FE),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  _getSourceIcon(item['type'] ?? ''),
-                                  color: const Color(0xFF0284C7),
-                                  size: 20,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Text(
-                                  item['title'] ?? 'N/A',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w500,
-                                    color: Color(0xFF334155),
-                                    fontSize: 14,
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Text(
+                                    source['title'] ?? 'N/A',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                      color: Color(0xFF334155),
+                                      fontSize: 14,
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      // Report Button
-                      Container(
-                        width: double.infinity,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFEE2E2),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: TextButton(
-                          onPressed: () {
-                            // Handle report functionality
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Report submitted')),
-                            );
-                          },
-                          child: const Text(
-                            'Report as Misinformation',
-                            style: TextStyle(
-                              color: Color(0xFFDC2626),
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
+                              ],
                             ),
                           ),
                         ),
-                      ),
+                        const SizedBox(height: 24),
+                      ],
+
+                      // Further Reading
+                      if (_currentAnalysisResult != null &&
+                          _currentAnalysisResult!['furtherReading'] != null &&
+                          (_currentAnalysisResult!['furtherReading'] as List)
+                              .isNotEmpty) ...[
+                        Column(
+                          children: [
+                            const Text(
+                              'Further Reading',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF0F172A),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Column(
+                              children: (_currentAnalysisResult![
+                                      'furtherReading'] as List)
+                                  .map(
+                                    (item) => Container(
+                                      margin: const EdgeInsets.only(bottom: 8),
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(8),
+                                        boxShadow: const [
+                                          BoxShadow(
+                                            color: Color(0x0A000000),
+                                            blurRadius: 4,
+                                            offset: Offset(0, 1),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Container(
+                                            width: 40,
+                                            height: 40,
+                                            decoration: const BoxDecoration(
+                                              color: Color(0xFFE0F2FE),
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: Icon(
+                                              _getSourceIcon(
+                                                  item['type'] ?? ''),
+                                              color: const Color(0xFF0284C7),
+                                              size: 20,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 16),
+                                          Expanded(
+                                            child: Text(
+                                              item['title'] ?? 'N/A',
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.w500,
+                                                color: Color(0xFF334155),
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                            ),
+                            const SizedBox(height: 24),
+                            // Report Button
+                            Container(
+                              width: double.infinity,
+                              height: 48,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFEE2E2),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: TextButton(
+                                onPressed: () {
+                                  // Handle report functionality
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                        content: Text('Report submitted')),
+                                  );
+                                },
+                                child: const Text(
+                                  'Report as Misinformation',
+                                  style: TextStyle(
+                                    color: Color(0xFFDC2626),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ],
                   ],
                 ),
@@ -1012,72 +1306,125 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     );
   }
 
-  Future<void> _pollForResults(String claimId) async {
-    int attempts = 0;
-    const maxAttempts = 30; // 30 seconds max
-
-    while (attempts < maxAttempts && mounted) {
-      try {
-        final result = await _apiService.getVerificationResult(claimId);
-
-        if (result['status'] == 'completed') {
-          setState(() {
-            _isAnalyzing = false;
-            _analysisResult = _formatAnalysisResult(result);
-          });
-          return;
-        }
-
-        // Wait 1 second before next attempt
-        await Future.delayed(const Duration(seconds: 1));
-        attempts++;
-      } catch (e) {
-        // If there's an error, stop polling
-        break;
-      }
+  Future<void> _translateExplanation() async {
+    if (_analysisResult == null) {
+      return;
+    }
+    if (_analysisResult?['explanation'] == null) {
+      return;
     }
 
-    // If we reach here, either max attempts reached or error occurred
+    if (_isTranslated) {
+      setState(() {
+        _isTranslated = false;
+        _translatedExplanation = '';
+      });
+      return;
+    }
+
     setState(() {
-      _isAnalyzing = false;
+      _isAnalyzing = true; // Indicate that a background operation is happening
     });
 
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text(
-                'Analysis is taking longer than expected. Please try again later.')),
-      );
+    try {
+      final originalText = _analysisResult!['explanation'] as String;
+      // Assuming `_geminiService` has a translateText method
+      final translatedText =
+          await _geminiService.translateText(originalText, _selectedLanguage);
+      if (mounted) {
+        setState(() {
+          _translatedExplanation = translatedText;
+          _isTranslated = true;
+          _isAnalyzing = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isAnalyzing = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Translation failed: ${e.toString()}')),
+        );
+      }
     }
   }
 
-  Map<String, dynamic> _formatAnalysisResult(Map<String, dynamic> result) {
-    // Format the API result to match our UI expectations
-    final credibilityScore = result['credibility_score'] ?? 85;
-    final credibilityLevel = _getCredibilityLevel(credibilityScore);
+  Future<void> _translateFullAnalysis() async {
+    if (_analysisResult == null || _selectedLanguage == 'en') {
+      setState(() {
+        _isTranslated = false;
+        _translatedAnalysisResult = null;
+      });
+      return;
+    }
 
-    return {
-      'credibilityScore': credibilityScore,
-      'credibilityLevel': credibilityLevel,
-      'explanation':
-          result['explanation'] ?? 'Analysis completed successfully.',
-      'sources': result['sources'] ??
-          [
-            {'type': 'newspaper', 'title': 'Reputable News Outlet'},
-            {'type': 'person', 'title': 'Expert Author'},
-            {'type': 'link', 'title': 'Citations'},
-          ],
-      'furtherReading': result['further_reading'] ??
-          [
-            {'type': 'article', 'title': 'Related Articles'},
-          ],
-      'claimId': result['claim_id'],
-    };
+    setState(() {
+      _isAnalyzing = true;
+    });
+
+    try {
+      final originalAnalysis = _analysisResult!;
+      final translatedMap = <String, dynamic>{};
+
+      for (var entry in originalAnalysis.entries) {
+        if (entry.value is String) {
+          translatedMap[entry.key] = await _geminiService.translateText(
+              entry.value as String, _selectedLanguage);
+        } else if (entry.value is List) {
+          final translatedList = [];
+          for (var item in entry.value as List) {
+            if (item is String) {
+              translatedList.add(
+                  await _geminiService.translateText(item, _selectedLanguage));
+            } else if (item is Map) {
+              final translatedItem = <String, dynamic>{};
+              for (var subEntry in item.entries) {
+                if (subEntry.value is String) {
+                  translatedItem[subEntry.key] =
+                      await _geminiService.translateText(
+                          subEntry.value as String, _selectedLanguage);
+                } else {
+                  translatedItem[subEntry.key] = subEntry.value;
+                }
+              }
+              translatedList.add(translatedItem);
+            } else {
+              translatedList.add(item);
+            }
+          }
+          translatedMap[entry.key] = translatedList;
+        } else {
+          translatedMap[entry.key] = entry.value;
+        }
+      }
+
+      setState(() {
+        _translatedAnalysisResult = translatedMap;
+        _isTranslated = true;
+        _isAnalyzing = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isAnalyzing = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Full translation failed: ${e.toString()}')),
+        );
+      }
+    }
   }
+
+  Map<String, dynamic>? get _currentAnalysisResult =>
+      _isTranslated && _translatedAnalysisResult != null
+          ? _translatedAnalysisResult
+          : _analysisResult;
 
   Map<String, dynamic> _formatGeminiAnalysisResult(
       Map<String, dynamic> result) {
-    final credibilityScore = result['credibilityScore'] ?? 50;
+    final credibilityScore =
+        (result['credibilityScore'] as num? ?? 50).clamp(0, 100).toInt();
     final credibilityLevel = result['credibilityLevel'] ?? 'Medium';
     final isMisinformation = result['isMisinformation'] ?? false;
 
@@ -1096,16 +1443,21 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       'redFlags': (result['redFlags'] as List?)?.cast<String>() ?? [],
       'furtherReading':
           (result['furtherReading'] as List?)?.cast<Map<String, dynamic>>() ??
-              [],
+              [
+                {'type': 'article', 'title': 'Related Articles'},
+                {
+                  'type': 'instagram',
+                  'title': 'Instagram Post',
+                  'url': 'https://www.instagram.com/'
+                },
+                {
+                  'type': 'youtube',
+                  'title': 'YouTube Video',
+                  'url': 'https://www.youtube.com/'
+                },
+              ],
       'extractedText': _extractedText,
     };
-  }
-
-  String _getCredibilityLevel(int score) {
-    if (score >= 80) return 'High Credibility';
-    if (score >= 60) return 'Medium Credibility';
-    if (score >= 40) return 'Low Credibility';
-    return 'Very Low Credibility';
   }
 
   IconData _getSourceIcon(String type) {
@@ -1130,6 +1482,10 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
         return Icons.verified;
       case 'ai_analysis':
         return Icons.psychology;
+      case 'instagram':
+        return FontAwesomeIcons.instagram;
+      case 'youtube':
+        return FontAwesomeIcons.youtube;
       default:
         return Icons.info;
     }
@@ -1151,4 +1507,9 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
         return const Color(0xFF6B7280); // Gray
     }
   }
+}
+
+enum MediaType {
+  image,
+  video,
 }
