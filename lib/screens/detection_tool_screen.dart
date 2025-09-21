@@ -18,7 +18,8 @@ class DetectionToolScreen extends StatelessWidget {
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF334155)), // secondary-700
+          icon: const Icon(Icons.arrow_back,
+              color: Color(0xFF334155)), // secondary-700
           onPressed: () => Navigator.of(context).pop(),
         ),
         actions: [
@@ -57,9 +58,11 @@ class DetectionToolScreen extends StatelessWidget {
                 fillColor: Colors.white,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Color(0xFFCBD5E1)), // secondary-300
+                  borderSide:
+                      BorderSide(color: Color(0xFFCBD5E1)), // secondary-300
                 ),
-                hintStyle: const TextStyle(color: Color(0xFF94A3B8)), // secondary-400
+                hintStyle:
+                    const TextStyle(color: Color(0xFF94A3B8)), // secondary-400
               ),
             ),
             const SizedBox(height: 12),
@@ -70,16 +73,19 @@ class DetectionToolScreen extends StatelessWidget {
                 fillColor: Colors.white,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Color(0xFFCBD5E1)), // secondary-300
+                  borderSide:
+                      BorderSide(color: Color(0xFFCBD5E1)), // secondary-300
                 ),
-                hintStyle: const TextStyle(color: Color(0xFF94A3B8)), // secondary-400
+                hintStyle:
+                    const TextStyle(color: Color(0xFF94A3B8)), // secondary-400
               ),
             ),
             const SizedBox(height: 12),
             ElevatedButton.icon(
               onPressed: () {},
               icon: const Icon(Icons.upload_file, color: Color(0xFF334155)),
-              label: const Text('Upload Media', style: TextStyle(color: Color(0xFF334155))),
+              label: const Text('Upload Media',
+                  style: TextStyle(color: Color(0xFF334155))),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFE2E8F0), // secondary-200
                 foregroundColor: const Color(0xFF334155), // secondary-700
@@ -102,7 +108,8 @@ class DetectionToolScreen extends StatelessWidget {
                 ),
                 elevation: 0,
               ),
-              child: const Text('Check Credibility', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Text('Check Credibility',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
             ),
             const SizedBox(height: 32),
             // Result Section (mocked)
@@ -111,7 +118,8 @@ class DetectionToolScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
                 image: const DecorationImage(
-                  image: NetworkImage('https://lh3.googleusercontent.com/aida-public/AB6AXuBl_ZMKJTyXqzfDcL1wIihp9vogLHa6IqnUSpK1N8iPgV_SAUM5ahsKOz_QPef4vAF8xA6FLtY2wFRi3zWVeFLTH6WGKcqJn7pK2TLTllEwHijJm1AQ4pjlpyuYDiP0PUN4wk-XhU-IzuYOs7AnrdL4Or7fk5p9n3gus9rqZhUDtQxuIkZhFm5BCveMkOshX57lsbrzpu_fB_ZL2njybh8rWjLmjHraw7-nFOpKnL2XRHVz3ooLZvPw-HA6vbFzOLM6qzJfQQbGf_I'),
+                  image: NetworkImage(
+                      'https://lh3.googleusercontent.com/aida-public/AB6AXuBl_ZMKJTyXqzfDcL1wIihp9vogLHa6IqnUSpK1N8iPgV_SAUM5ahsKOz_QPef4vAF8xA6FLtY2wFRi3zWVeFLTH6WGKcqJn7pK2TLTllEwHijJm1AQ4pjlpyuYDiP0PUN4wk-XhU-IzuYOs7AnrdL4Or7fk5p9n3gus9rqZhUDtQxuIkZhFm5BCveMkOshX57lsbrzpu_fB_ZL2njybh8rWjLmjHraw7-nFOpKnL2XRHVz3ooLZvPw-HA6vbFzOLM6qzJfQQbGf_I'),
                   fit: BoxFit.cover,
                 ),
               ),
@@ -122,7 +130,7 @@ class DetectionToolScreen extends StatelessWidget {
                     begin: Alignment.bottomCenter,
                     end: Alignment.topCenter,
                     colors: [
-                      Colors.black.withOpacity(0.6),
+                      Colors.black.withValues(alpha: 0.6),
                       Colors.transparent,
                     ],
                   ),
@@ -132,9 +140,15 @@ class DetectionToolScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: const [
-                    Text('Credibility Score: 85%', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
+                    Text('Credibility Score: 85%',
+                        style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white)),
                     SizedBox(height: 4),
-                    Text('High Credibility', style: TextStyle(fontSize: 18, color: Colors.greenAccent)),
+                    Text('High Credibility',
+                        style:
+                            TextStyle(fontSize: 18, color: Colors.greenAccent)),
                   ],
                 ),
               ),
@@ -146,7 +160,11 @@ class DetectionToolScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: const [
-                  Text('Explanation', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                  Text('Explanation',
+                      style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF0F172A))),
                   SizedBox(height: 8),
                   Text(
                     'This news article has a high credibility score based on the following factors: The information is consistent with other reputable sources, the author is a known expert in the field, and the article cites its sources.',
@@ -162,9 +180,14 @@ class DetectionToolScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Source Evidence', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                  const Text('Source Evidence',
+                      style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF0F172A))),
                   const SizedBox(height: 8),
-                  _EvidenceItem(icon: Icons.newspaper, label: 'Reputable News Outlet'),
+                  _EvidenceItem(
+                      icon: Icons.newspaper, label: 'Reputable News Outlet'),
                   _EvidenceItem(icon: Icons.person, label: 'Expert Author'),
                   _EvidenceItem(icon: Icons.link, label: 'Citations'),
                 ],
@@ -177,7 +200,11 @@ class DetectionToolScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Further Reading', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                  const Text('Further Reading',
+                      style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF0F172A))),
                   const SizedBox(height: 8),
                   _EvidenceItem(icon: Icons.article, label: 'Related Articles'),
                 ],
@@ -196,7 +223,8 @@ class DetectionToolScreen extends StatelessWidget {
                 ),
                 elevation: 0,
               ),
-              child: const Text('Report as Misinformation', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Text('Report as Misinformation',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -222,7 +250,7 @@ class _EvidenceItem extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),

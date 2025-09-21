@@ -35,7 +35,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 8,
               offset: const Offset(0, -2),
             ),
@@ -51,7 +51,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 _buildNavItem(0, Icons.home, Icons.home_outlined, 'Home'),
                 _buildNavItem(1, Icons.search, Icons.search_outlined, 'Detect'),
                 _buildNavItem(2, Icons.school, Icons.school_outlined, 'Learn'),
-                _buildNavItem(3, Icons.people, Icons.people_outline, 'Community'),
+                _buildNavItem(
+                    3, Icons.people, Icons.people_outline, 'Community'),
                 _buildNavItem(4, Icons.person, Icons.person_outline, 'Profile'),
               ],
             ),
@@ -61,9 +62,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     );
   }
 
-  Widget _buildNavItem(int index, IconData selectedIcon, IconData unselectedIcon, String label) {
+  Widget _buildNavItem(
+      int index, IconData selectedIcon, IconData unselectedIcon, String label) {
     final isSelected = _selectedIndex == index;
-    
+
     return Expanded(
       child: GestureDetector(
         onTap: () {
@@ -79,7 +81,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             children: [
               Icon(
                 isSelected ? selectedIcon : unselectedIcon,
-                color: isSelected ? const Color(0xFF2196F3) : const Color(0xFF757575),
+                color: isSelected
+                    ? const Color(0xFF2196F3)
+                    : const Color(0xFF757575),
                 size: 22, // Slightly smaller icon to save space
               ),
               const SizedBox(height: 2), // Reduced spacing
@@ -91,8 +95,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 9, // Slightly smaller text
-                    color: isSelected ? const Color(0xFF2196F3) : const Color(0xFF757575),
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    color: isSelected
+                        ? const Color(0xFF2196F3)
+                        : const Color(0xFF757575),
+                    fontWeight:
+                        isSelected ? FontWeight.w600 : FontWeight.normal,
                     height: 1.1, // Tighter line height
                   ),
                 ),

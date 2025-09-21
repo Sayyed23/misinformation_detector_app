@@ -16,7 +16,7 @@ class _SignupScreenState extends State<SignupScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final AuthService _authService = AuthService();
-  
+
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
   bool _isLoading = false;
@@ -102,7 +102,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
+                      color: Colors.black.withValues(alpha: 0.04),
                       blurRadius: 16,
                       offset: const Offset(0, 8),
                     ),
@@ -149,15 +149,18 @@ class _SignupScreenState extends State<SignupScreen> {
                         prefixIcon: const Icon(Icons.email_outlined),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+                          borderSide:
+                              const BorderSide(color: Color(0xFFE0E0E0)),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+                          borderSide:
+                              const BorderSide(color: Color(0xFFE0E0E0)),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFF2196F3)),
+                          borderSide:
+                              const BorderSide(color: Color(0xFF2196F3)),
                         ),
                         filled: true,
                         fillColor: const Color(0xFFF5F5F5),
@@ -192,7 +195,9 @@ class _SignupScreenState extends State<SignupScreen> {
                         prefixIcon: const Icon(Icons.lock_outlined),
                         suffixIcon: IconButton(
                           icon: Icon(
-                            _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                            _isPasswordVisible
+                                ? Icons.visibility
+                                : Icons.visibility_off,
                           ),
                           onPressed: () {
                             setState(() {
@@ -202,15 +207,18 @@ class _SignupScreenState extends State<SignupScreen> {
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+                          borderSide:
+                              const BorderSide(color: Color(0xFFE0E0E0)),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+                          borderSide:
+                              const BorderSide(color: Color(0xFFE0E0E0)),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFF2196F3)),
+                          borderSide:
+                              const BorderSide(color: Color(0xFF2196F3)),
                         ),
                         filled: true,
                         fillColor: const Color(0xFFF5F5F5),
@@ -222,7 +230,8 @@ class _SignupScreenState extends State<SignupScreen> {
                         if (value.length < 8) {
                           return 'Password must be at least 8 characters long';
                         }
-                        if (!RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)').hasMatch(value)) {
+                        if (!RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)')
+                            .hasMatch(value)) {
                           return 'Password must contain uppercase, lowercase, and numbers';
                         }
                         return null;
@@ -248,25 +257,31 @@ class _SignupScreenState extends State<SignupScreen> {
                         prefixIcon: const Icon(Icons.lock_outlined),
                         suffixIcon: IconButton(
                           icon: Icon(
-                            _isConfirmPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                            _isConfirmPasswordVisible
+                                ? Icons.visibility
+                                : Icons.visibility_off,
                           ),
                           onPressed: () {
                             setState(() {
-                              _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+                              _isConfirmPasswordVisible =
+                                  !_isConfirmPasswordVisible;
                             });
                           },
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+                          borderSide:
+                              const BorderSide(color: Color(0xFFE0E0E0)),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+                          borderSide:
+                              const BorderSide(color: Color(0xFFE0E0E0)),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFF2196F3)),
+                          borderSide:
+                              const BorderSide(color: Color(0xFF2196F3)),
                         ),
                         filled: true,
                         fillColor: const Color(0xFFF5F5F5),

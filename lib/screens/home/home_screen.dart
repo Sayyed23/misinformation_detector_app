@@ -12,14 +12,14 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  
   @override
   Widget build(BuildContext context) {
-  // Use Supabase current user
-  final supabaseUser = Supabase.instance.client.auth.currentUser;
-  final String userName = supabaseUser?.userMetadata?['display_name'] ?? 'User';
-  final String firstName = userName.split(' ').first;
-    
+    // Use Supabase current user
+    final supabaseUser = Supabase.instance.client.auth.currentUser;
+    final String userName =
+        supabaseUser?.userMetadata?['display_name'] ?? 'User';
+    final String firstName = userName.split(' ').first;
+
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
       body: SafeArea(
@@ -74,7 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(width: 8),
               ],
             ),
-            
+
             // Content
             SliverToBoxAdapter(
               child: Column(
@@ -106,9 +106,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                   ),
-                  
+
                   const SizedBox(height: 12),
-                  
+
                   // Feature Cards
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -123,7 +123,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             Icons.fact_check_outlined,
                             () => Navigator.of(context).push(
                               MaterialPageRoute(
-                                builder: (context) => const DetectionToolScreen(),
+                                builder: (context) =>
+                                    const DetectionToolScreen(),
                               ),
                             ),
                           ),
@@ -142,9 +143,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                   ),
-                  
+
                   const SizedBox(height: 24),
-                  
+
                   // For You Section
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -157,9 +158,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // Info Cards
                   _buildInfoCard(
                     'Tip: Verify sources before sharing',
@@ -168,7 +169,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     const Color(0xFFE3F2FD),
                     const Color(0xFF2196F3),
                   ),
-                  
+
                   _buildInfoCard(
                     'Community Update: New forum rules',
                     '2 min read',
@@ -176,7 +177,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     const Color(0xFFE8F5E9),
                     const Color(0xFF4CAF50),
                   ),
-                  
+
                   _buildInfoCard(
                     'Suggested Learning: Spotting fake news',
                     '4 min read',
@@ -184,9 +185,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     const Color(0xFFF3E5F5),
                     const Color(0xFF9C27B0),
                   ),
-                  
+
                   const SizedBox(height: 24),
-                  
+
                   // Featured Article
                   Container(
                     margin: const EdgeInsets.symmetric(horizontal: 20),
@@ -195,7 +196,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           blurRadius: 10,
                           offset: const Offset(0, 2),
                         ),
@@ -221,7 +222,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
                         ),
-                        
+
                         // Article Content
                         Padding(
                           padding: const EdgeInsets.all(20),
@@ -283,7 +284,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                   ),
-                  
+
                   const SizedBox(height: 100),
                 ],
               ),
@@ -293,7 +294,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-  
+
   Widget _buildFeatureCard(
     BuildContext context,
     String title,
@@ -316,7 +317,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.8),
+                color: Colors.white.withValues(alpha: 0.8),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
@@ -347,7 +348,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-  
+
   Widget _buildInfoCard(
     String title,
     String time,
@@ -363,7 +364,7 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),

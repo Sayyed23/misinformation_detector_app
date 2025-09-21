@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:go_router/go_router.dart';
+import 'services/config_service.dart';
 
 // Configuration imports
 import 'config/app_config.dart';
@@ -17,10 +18,17 @@ import 'screens/auth/login_screen.dart';
 import 'screens/auth/signup_screen.dart';
 import 'screens/auth/profile_setup_screen.dart';
 import 'screens/main_navigation_screen.dart';
+import 'screens/analysis/analysis_screen.dart';
+import 'screens/education/education_screen.dart';
+import 'screens/community/community_screen.dart';
+import 'screens/profile/profile_screen.dart';
 
 void main() async {
   // Ensure Flutter binding is initialized
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize configuration service
+  await ConfigService.initialize();
 
   // Set preferred orientations (not applicable for web)
   if (!kIsWeb) {
@@ -30,10 +38,10 @@ void main() async {
     ]);
   }
 
-  // Initialize Supabase
+  // Initialize Supabase with configuration
   await Supabase.initialize(
-    url: 'https://fpxczbnluwmxsdpkyddl.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZweGN6Ym5sdXdteHNkcGt5ZGRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3MjkzNjQsImV4cCI6MjA3MjMwNTM2NH0.apU_DKxDUB5Ion8DI6nQNZUJ-uVu_emULzWdve-PPNg',
+    url: ConfigService.instance.supabaseUrl,
+    anonKey: ConfigService.instance.supabaseAnonKey,
   );
 
   // Initialize SharedPreferences
@@ -105,8 +113,10 @@ class _TruthLensAppState extends State<TruthLensApp> {
   }
 
   GoRouter _createRouter() {
-    final bool isFirstLaunch = widget.prefs.getBool(AppConstants.keyFirstLaunch) ?? true;
-    final bool hasSupabaseSession = Supabase.instance.client.auth.currentUser != null;
+    final bool isFirstLaunch =
+        widget.prefs.getBool(AppConstants.keyFirstLaunch) ?? true;
+    final bool hasSupabaseSession =
+        Supabase.instance.client.auth.currentUser != null;
     final bool isLocalGuest = widget.prefs.getBool('is_local_guest') ?? false;
     final bool isAuthenticated = hasSupabaseSession || isLocalGuest;
 
@@ -219,15 +229,15 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _navigateToNext() async {
     await Future.delayed(const Duration(seconds: 2));
-    
+
     if (!mounted) return;
-    
+
     final prefs = context.read<SharedPreferences>();
     final isFirstLaunch = prefs.getBool(AppConstants.keyFirstLaunch) ?? true;
     final authToken = prefs.getString(AppConstants.keyAuthToken);
-    
+
     if (!mounted) return;
-    
+
     if (isFirstLaunch) {
       context.go(AppConstants.onboardingRoute);
     } else if (authToken == null || authToken.isEmpty) {
@@ -282,9 +292,9 @@ class _SplashScreenState extends State<SplashScreen> {
 class RegisterScreen extends StatelessWidget {
   const RegisterScreen({super.key});
 
-  @override  
+  @override
   Widget build(BuildContext context) {
-  // TODO: Implement proper register screen with Supabase auth
+    // TODO: Implement proper register screen with Supabase auth
     return Scaffold(
       appBar: AppBar(title: const Text('Register')),
       body: const Center(
@@ -293,7 +303,6 @@ class RegisterScreen extends StatelessWidget {
     );
   }
 }
-
 
 class ForgotPasswordScreen extends StatelessWidget {
   const ForgotPasswordScreen({super.key});
@@ -306,7 +315,6 @@ class ForgotPasswordScreen extends StatelessWidget {
     );
   }
 }
-
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -495,18 +503,6 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-class AnalysisScreen extends StatelessWidget {
-  const AnalysisScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Content Analysis')),
-      body: const Center(child: Text('Analysis Screen')),
-    );
-  }
-}
-
 class AlertsScreen extends StatelessWidget {
   const AlertsScreen({super.key});
 
@@ -515,42 +511,6 @@ class AlertsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Misinformation Alerts')),
       body: const Center(child: Text('Alerts Screen')),
-    );
-  }
-}
-
-class EducationScreen extends StatelessWidget {
-  const EducationScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Learning Hub')),
-      body: const Center(child: Text('Education Screen')),
-    );
-  }
-}
-
-class CommunityScreen extends StatelessWidget {
-  const CommunityScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Community')),
-      body: const Center(child: Text('Community Screen')),
-    );
-  }
-}
-
-class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Profile')),
-      body: const Center(child: Text('Profile Screen')),
     );
   }
 }

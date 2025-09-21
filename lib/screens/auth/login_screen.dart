@@ -21,8 +21,8 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
     } catch (e) {
-      print('Supabase guest login failed: $e');
-      
+      debugPrint('Supabase guest login failed: $e');
+
       // Fallback to local guest mode
       try {
         final localGuestEnabled = await _authService.enableLocalGuestMode();
@@ -30,7 +30,8 @@ class _LoginScreenState extends State<LoginScreen> {
           // Show a message that user is in offline guest mode
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Welcome! You\'re using guest mode (offline features only)'),
+              content: Text(
+                  'Welcome! You\'re using guest mode (offline features only)'),
               backgroundColor: Colors.blue,
             ),
           );
@@ -38,9 +39,9 @@ class _LoginScreenState extends State<LoginScreen> {
           return;
         }
       } catch (localError) {
-        print('Local guest mode failed: $localError');
+        debugPrint('Local guest mode failed: $localError');
       }
-      
+
       // If both methods fail, show error
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -56,11 +57,12 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     }
   }
+
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _authService = AuthService();
-  
+
   bool _isLoading = false;
   bool _obscurePassword = true;
 
@@ -125,7 +127,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
+                      color: Colors.black.withValues(alpha: 0.04),
                       blurRadius: 16,
                       offset: const Offset(0, 8),
                     ),
@@ -165,11 +167,13 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+                          borderSide:
+                              const BorderSide(color: Color(0xFFE0E0E0)),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFF2196F3), width: 2),
+                          borderSide: const BorderSide(
+                              color: Color(0xFF2196F3), width: 2),
                         ),
                         filled: true,
                         fillColor: const Color(0xFFF5F5F5),
@@ -196,7 +200,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
                           icon: Icon(
-                            _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                            _obscurePassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
                           ),
                           onPressed: () {
                             setState(() {
@@ -209,11 +215,13 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+                          borderSide:
+                              const BorderSide(color: Color(0xFFE0E0E0)),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFF2196F3), width: 2),
+                          borderSide: const BorderSide(
+                              color: Color(0xFF2196F3), width: 2),
                         ),
                         filled: true,
                         fillColor: const Color(0xFFF5F5F5),
@@ -315,7 +323,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       width: double.infinity,
                       height: 48,
                       child: OutlinedButton.icon(
-                        icon: const Icon(Icons.person_outline, color: Color(0xFF2196F3)),
+                        icon: const Icon(Icons.person_outline,
+                            color: Color(0xFF2196F3)),
                         label: const Text(
                           'Continue as Guest',
                           style: TextStyle(
@@ -347,7 +356,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      icon: const Icon(Icons.facebook, color: Color(0xFF1877F2)),
+                      icon:
+                          const Icon(Icons.facebook, color: Color(0xFF1877F2)),
                       label: const Text(
                         'Continue with Facebook',
                         style: TextStyle(

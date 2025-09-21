@@ -1,40 +1,44 @@
-import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:image_picker/image_picker.dart';
+import 'config_service.dart';
 
 class ApiService {
-  static const String _baseUrl = 'https://misinformation-detection-api-abc123-uc.a.run.app';
+  late final String _baseUrl;
   late final Dio _dio;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseStorage _storage = FirebaseStorage.instance;
+  final SupabaseClient _supabase = Supabase.instance.client;
+  final ConfigService _config = ConfigService.instance;
 
   ApiService() {
+    _baseUrl = _config.backendApiUrl;
     _dio = Dio(BaseOptions(
       baseUrl: _baseUrl,
       connectTimeout: const Duration(seconds: 30),
       receiveTimeout: const Duration(seconds: 60),
       headers: {
         'Content-Type': 'application/json',
+        if (_config.backendApiKey.isNotEmpty)
+          'Authorization': 'Bearer ${_config.backendApiKey}',
       },
     ));
 
     // Add request interceptor to include auth token
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
-        final user = _auth.currentUser;
+        final user = _supabase.auth.currentUser;
         if (user != null) {
-          final idToken = await user.getIdToken();
-          options.headers['Authorization'] = 'Bearer $idToken';
+          final session = _supabase.auth.currentSession;
+          if (session != null) {
+            options.headers['Authorization'] = 'Bearer ${session.accessToken}';
+          }
         }
         handler.next(options);
       },
       onError: (error, handler) {
-        print('API Error: ${error.message}');
+        // Use debugPrint instead of print for production code
+        debugPrint('API Error: ${error.message}');
         handler.next(error);
       },
     ));
@@ -50,7 +54,7 @@ class ApiService {
   }) async {
     try {
       String? imageUrl;
-      
+
       // Upload image if provided
       if (image != null) {
         imageUrl = await _uploadImage(image);
@@ -65,7 +69,7 @@ class ApiService {
       });
 
       final response = await _dio.post(
-        '/api/claims/submitClaim',
+        _config.analyzeTextEndpoint,
         data: formData,
       );
 
@@ -80,7 +84,7 @@ class ApiService {
   // Get verification results
   Future<Map<String, dynamic>> getVerificationResult(String claimId) async {
     try {
-      final response = await _dio.get('/api/claims/verifyClaim/$claimId');
+      final response = await _dio.get('${_config.getResultEndpoint}/$claimId');
       return response.data;
     } on DioException catch (e) {
       throw _handleDioException(e);
@@ -97,7 +101,7 @@ class ApiService {
   }) async {
     try {
       final response = await _dio.get(
-        '/api/users/userHistory',
+        _config.userHistoryEndpoint,
         queryParameters: {
           'limit': limit,
           'offset': offset,
@@ -148,12 +152,12 @@ class ApiService {
     String language = 'en',
   }) async {
     try {
-      final user = _auth.currentUser;
+      final user = _supabase.auth.currentUser;
       final response = await _dio.get(
         '/api/education/modules',
         queryParameters: {
           'language': language,
-          if (user != null) 'user_id': user.uid,
+          if (user != null) 'user_id': user.id,
         },
       );
       return List<Map<String, dynamic>>.from(response.data);
@@ -252,7 +256,8 @@ class ApiService {
         '/api/users/profile',
         data: {
           if (displayName != null) 'display_name': displayName,
-          if (preferredLanguage != null) 'preferred_language': preferredLanguage,
+          if (preferredLanguage != null)
+            'preferred_language': preferredLanguage,
           if (notificationPreferences != null)
             'notification_preferences': notificationPreferences,
         },
@@ -358,19 +363,24 @@ class ApiService {
     }
   }
 
-  // Upload image to Firebase Storage
+  // Upload image to Supabase Storage
   Future<String> _uploadImage(XFile image) async {
     try {
-      final user = _auth.currentUser;
+      final user = _supabase.auth.currentUser;
       if (user == null) throw Exception('User not authenticated');
 
       final fileName = '${DateTime.now().millisecondsSinceEpoch}_${image.name}';
-      final storageRef = _storage.ref().child('claims/${user.uid}/$fileName');
-      
-      final uploadTask = storageRef.putFile(File(image.path));
-      final snapshot = await uploadTask;
-      
-      return await snapshot.ref.getDownloadURL();
+      final filePath = 'claims/${user.id}/$fileName';
+
+      final fileBytes = await File(image.path).readAsBytes();
+      await _supabase.storage
+          .from(_config.supabaseStorageBucket)
+          .uploadBinary(filePath, fileBytes);
+
+      final publicUrl = _supabase.storage
+          .from(_config.supabaseStorageBucket)
+          .getPublicUrl(filePath);
+      return publicUrl;
     } catch (e) {
       throw Exception('Failed to upload image: $e');
     }
@@ -382,12 +392,13 @@ class ApiService {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:
-        return Exception('Connection timeout. Please check your internet connection.');
-      
+        return Exception(
+            'Connection timeout. Please check your internet connection.');
+
       case DioExceptionType.badResponse:
         final statusCode = e.response?.statusCode;
         final message = e.response?.data['detail'] ?? e.response?.statusMessage;
-        
+
         switch (statusCode) {
           case 400:
             return Exception('Bad request: $message');
@@ -404,16 +415,16 @@ class ApiService {
           default:
             return Exception('Request failed: $message');
         }
-      
+
       case DioExceptionType.cancel:
         return Exception('Request was cancelled');
-      
+
       case DioExceptionType.unknown:
         if (e.error is SocketException) {
           return Exception('No internet connection');
         }
         return Exception('Network error: ${e.message}');
-      
+
       default:
         return Exception('Request failed: ${e.message}');
     }

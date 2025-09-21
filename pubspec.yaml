@@ -26,6 +26,7 @@ dependencies:
   # Network & API
   dio: ^5.4.0
   connectivity_plus: ^7.0.0
+  flutter_dotenv: ^5.1.0
   
   # Local Storage
   shared_preferences: ^2.2.2
@@ -95,6 +96,3 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
-# Firebase & Google Cloud Services
-  cloud_firestore: ^5.4.4
-  firebase_storage: ^12.3.2
